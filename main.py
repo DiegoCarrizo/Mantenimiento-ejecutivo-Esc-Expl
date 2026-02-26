@@ -79,18 +79,20 @@ for item in items:
 st.divider()
 obs_especialista = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
 
-# --- GENERAR EXCEL (Versión compatible sin xlsxwriter) ---
+# --- GENERAR EXCEL ---
 if st.button("Preparar Planilla Excel"):
+    # Creamos el DataFrame con las respuestas del checklist 
     df = pd.DataFrame(respuestas)
     
-    # Crear archivo en memoria usando el motor por defecto
+    # Preparamos el archivo en memoria
     output = BytesIO()
+    # Usamos openpyxl que es más liviano para el servidor
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Checklist')
+        df.to_excel(writer, index=False, sheet_name='Mantenimiento')
     
     st.download_button(
         label="📥 Descargar Excel para Archivo",
         data=output.getvalue(),
-        file_name=f"Checklist_{tipo_v}.xlsx",
+        file_name=f"Mantenimiento_{tipo_v}_{seccion}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
