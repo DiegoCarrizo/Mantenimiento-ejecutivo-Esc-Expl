@@ -6,7 +6,7 @@ from datetime import datetime
 st.set_page_config(page_title="Mantenimiento Ejecutivo - Esc Expl", layout="wide")
 
 # --- BASE DE DATOS DE ASPECTOS A CONTROLAR ---
-# Extraído de la Lista de Control de Mantenimiento Ejecutivo [cite: 1, 6]
+# Extraído de la Lista de Control de Mantenimiento Ejecutivo 
 DATA_CHECKLIST = {
     "VEE HUMMER / UNIMOG / MB": [
         "Engrase de rótulas delanteras", "Aceite de motor", "Filtro de aire", 
@@ -58,39 +58,56 @@ st.write("Escuadrón de Exploración de Caballería Blindado 11")
 # --- ENCABEZADO ---
 with st.expander("Datos del Responsable y Unidad", expanded=True):
     col1, col2 = st.columns(2)
-    responsable = col1.text_input("Responsable (Grado y Apellido) [cite: 2]")
-    seccion = col2.text_input("Sección [cite: 3]")
+    responsable = col1.text_input("Responsable (Grado y Apellido)")
+    seccion = col2.text_input("Sección")
     tipo_v = st.selectbox("Categoría de Vehículo/Equipo", list(DATA_CHECKLIST.keys()))
-    comodidad = st.text_input("Grupo Comodidad [cite: 5]")
+    comodidad = st.text_input("Grupo Comodidad")
     fecha_hoy = datetime.now().strftime('%d/%m/%Y')
 
-# --- CUERPO DEL CHECKLIST ---
-st.subheader(f"Aspectos a controlar: {tipo_v}")
+# --- LÓGICA DE PROGRESO DINÁMICO ---
 items = DATA_CHECKLIST[tipo_v]
+total_items = len(items)
+
+# Contenedor para la barra (para que aparezca arriba del checklist)
+st.subheader("Estado de Alistamiento")
+progreso_placeholder = st.empty()
+porcentaje_placeholder = st.empty()
+
+# --- CUERPO DEL CHECKLIST ---
+st.divider()
 respuestas = []
+contador_si = 0
 
 for i, item in enumerate(items):
     col_t, col_s, col_n, col_o = st.columns([4, 1, 1, 3])
     col_t.write(f"**{item}**")
-    # Se añade i a la key para evitar duplicados si el texto del item se repite
+    
     si = col_s.checkbox("Sí", key=f"si_{tipo_v}_{i}")
     no = col_n.checkbox("No", key=f"no_{tipo_v}_{i}")
     obs = col_o.text_input("Obs", key=f"obs_{tipo_v}_{i}", placeholder="Observaciones...")
+    
+    if si:
+        contador_si += 1
+    
     respuestas.append({"Aspecto": item, "Sí": "X" if si else "", "No": "X" if no else "", "Observaciones": obs})
+
+# --- ACTUALIZACIÓN DE LA BARRA ---
+porcentaje = int((contador_si / total_items) * 100)
+progreso_placeholder.progress(porcentaje / 100)
+porcentaje_placeholder.markdown(f"**Nivel de Operatividad: {porcentaje}%** ({contador_si} de {total_items} ítems conformes)")
 
 # --- OBSERVACIONES FINALES ---
 st.divider()
 obs_especialista = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
 
-# --- BOTÓN DE IMPRESIÓN / REPORTE VISUAL ---
+# --- BOTÓN DE IMPRESIÓN ---
 if st.button("🖨️ Generar Reporte para Imprimir / PDF"):
-    # Construcción del reporte en HTML para la función de impresión del navegador
     html_report = f"""
     <div style="font-family: 'Arial'; padding: 30px; border: 1px solid #000;">
         <h2 style="text-align: center;">LISTA DE CONTROL DE MANTENIMIENTO EJECUTIVO</h2>
-        <p><b>UNIDAD:</b> Escuadrón de Exploración de Caballería Blindado 11</p>
         <p><b>RESPONSABLE:</b> {responsable} &nbsp;&nbsp;&nbsp; <b>SECCIÓN:</b> {seccion}</p>
         <p><b>FECHA:</b> {fecha_hoy} &nbsp;&nbsp;&nbsp; <b>GRUPO COMODIDAD:</b> {comodidad}</p>
+        <p><b>ESTADO DE ALISTAMIENTO: {porcentaje}%</b></p>
         <hr>
         <h3>Vehículo/Equipo: {tipo_v}</h3>
         <table style="width: 100%; border-collapse: collapse;">
@@ -120,9 +137,9 @@ if st.button("🖨️ Generar Reporte para Imprimir / PDF"):
         <p><b>OBSERVACIONES DEL ESPECIALISTA:</b> {obs_especialista}</p>
         <br><br>
         <div style="display: flex; justify-content: space-around; text-align: center;">
-            <div>____________________<br>J SEC [cite: 9]</div>
-            <div>____________________<br>Especialista [cite: 11]</div>
-            <div>____________________<br>J Sec Cdo y Ser [cite: 15]</div>
+            <div>____________________<br>J SEC</div>
+            <div>____________________<br>Especialista</div>
+            <div>____________________<br>J Sec Cdo y Ser</div>
         </div>
     </div>
     <script>window.print();</script>
