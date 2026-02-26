@@ -1,26 +1,30 @@
 import streamlit as st
 
-# --- TÍTULO DEL CHECKLIST ---
-st.header("📋 Lista de Control de Mantenimiento")
+st.set_page_config(page_title="Checklist Esc. Expl.", page_icon="🪖")
 
-# --- BLOQUE 1: MOTOR Y TRANSMISIÓN ---
-st.subheader("1. Grupo Motopropulsor")
-motor_aceite = st.radio("Nivel de aceite de motor:", ["Correcto", "Bajo", "Excesivo"], horizontal=True)
-motor_fugas = st.checkbox("¿Existen fugas de fluidos visibles?")
-motor_ruidos = st.checkbox("¿Se perciben ruidos anormales al encender?")
+st.title("🪖 Control de Mantenimiento")
+st.write("Registro de inspección para vehículos del Escuadrón de Exploración.")
 
-# --- BLOQUE 2: SISTEMA ELÉCTRICO ---
-st.subheader("2. Sistemas Eléctricos")
-luces_delanteras = st.toggle("Luces de marcha (delanteras)")
-luces_traseras = st.toggle("Luces de freno y posición")
-instrumental = st.checkbox("Tablero de instrumentos operativo")
+# --- EL CHECKLIST ---
+st.header("📋 Lista de Verificación")
 
-# --- BLOQUE 3: TREN DE RODAJE Y FRENOS ---
-st.subheader("3. Rodado y Frenado")
-presion_neumaticos = st.select_slider("Presión de neumáticos:", options=["Baja", "Normal", "Alta"])
-estado_frenos = st.selectbox("Estado del sistema de frenos:", ["Operativo", "Largo", "No Operativo"])
+# Sección Mecánica
+with st.expander("1. Motor y Fluidos", expanded=True):
+    aceite = st.radio("Nivel de aceite:", ["Correcto", "Bajo", "Excesivo"], horizontal=True)
+    fugas = st.checkbox("¿Hay fugas de fluidos visibles?")
+    liquido_refr = st.toggle("Nivel de refrigerante OK")
 
-# --- BLOQUE 4: EQUIPO TÁCTICO (Específico Esc. Expl.) ---
-st.subheader("4. Equipo de Dotación")
-radio_comms = st.radio("Equipo de comunicaciones:", ["Operativo", "Falla Parcial", "Fuera de Servicio"])
-combustible_nivel = st.slider("Carga de combustible (%)", 0, 100, 50)
+# Sección Eléctrica
+with st.expander("2. Sistema Eléctrico"):
+    luces = st.multiselect("Luces operativas:", ["Bajas", "Altas", "Freno", "Giro", "Oscurecimiento"])
+    bateria = st.select_slider("Estado de carga batería:", options=["Baja", "Media", "Óptima"])
+
+# Sección Táctica
+with st.expander("3. Equipo del Escuadrón"):
+    radio = st.radio("Comunicaciones (VHF/UHF):", ["Operativo", "Falla", "N/A"])
+    combustible = st.slider("Nivel de combustible (%)", 0, 100, 50)
+    novedades = st.text_area("Observaciones adicionales:")
+
+if st.button("Guardar Inspección"):
+    st.success("Inspección registrada correctamente.")
+    st.balloons()
