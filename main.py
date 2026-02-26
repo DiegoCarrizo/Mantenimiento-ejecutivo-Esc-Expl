@@ -79,23 +79,20 @@ for item in items:
 st.divider()
 obs_especialista = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
 
-# --- BOTÓN DE GENERACIÓN DE EXCEL ---
-if st.button("Preparar Planilla Excel"):
-    if not responsable or not seccion:
-        st.error("Por favor, completa el nombre del Responsable y la Sección.")
-    else:
-        # Crear DataFrame con los datos del checklist
-        df_export = pd.DataFrame(respuestas)
-        
-        # Generar el archivo Excel en memoria
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_export.to_excel(writer, index=False, sheet_name='Mantenimiento')
-        
-        # Botón de descarga real
-        st.download_button(
-            label="📥 Descargar Excel para Archivo",
-            data=output.getvalue(),
-            file_name=f"Mantenimiento_{tipo_v}_{seccion}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+# --- EL BOTÓN MÁGICO (Sin librerías que fallen) ---
+st.warning("Para guardar: Haz clic en el botón de abajo y selecciona 'Guardar como PDF' en tu navegador.")
+
+if st.button("🖨️ GENERAR REPORTE (PDF / IMPRIMIR)"):
+    # Este pequeño script de JavaScript ordena al navegador abrir el menú de impresión
+    st.components.v1.html("""
+        <script>
+            window.print();
+        </script>
+    """, height=0)
+
+# Espacio para firmas al final (como en el Word)
+st.write("        ")
+f1, f2, f3 = st.columns(3)
+f1.write("______________________\n\n J SEC")
+f2.write("______________________\n\n ESPECIALISTA")
+f3.write("______________________\n\n J SEC CDO Y SER")
