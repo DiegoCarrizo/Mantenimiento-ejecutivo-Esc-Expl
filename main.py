@@ -1,12 +1,21 @@
 import streamlit as st
-import pandas as pd
-from io import BytesIO
+from datetime import datetime
 
-st.set_page_config(page_title="Mantenimiento Ejecutivo - Esc Expl", layout="wide")
+st.set_page_config(page_title="Mantenimiento Ejecutivo", layout="wide")
 
-# --- BASE DE DATOS DE ASPECTOS A CONTROLAR ---
-# Extraído de la Lista de Control de Mantenimiento Ejecutivo
-DATA_CHECKLIST = {
+# --- DATOS DEL DOCUMENTO ---
+st.title("LISTA DE CONTROL DE MANTENIMIENTO EJECUTIVO")
+st.write("ESCUADRÓN DE EXPLORACIÓN DE CABALLERÍA BLINDADO 11")
+
+col1, col2 = st.columns(2)
+responsable = col1.text_input("RESPONSABLE", placeholder="Grado y Apellido")
+seccion = col2.text_input("SECCIÓN")
+fecha = col1.text_input("FECHA DE EJECUCIÓN", value=f"ROSPENTEK (SC), {datetime.now().strftime('%d')} de Febrero de 2026")
+comodidad = col2.text_input("GRUPO COMODIDAD")
+
+# --- LISTADO DE ÍTEMS (Extraído del Word) ---
+# Agrupamos por categorías para que sea más fácil de llenar
+categorias = {
     "VEE HUMMER / UNIMOG / MB": [
         "Engrase de rótulas delanteras", "Aceite de motor", "Filtro de aire", 
         "Control de refrigerante", "Líquidos de freno", "Control de caliper",
@@ -51,48 +60,57 @@ DATA_CHECKLIST = {
     ]
 }
 
-st.title("📋 Mantenimiento Ejecutivo - Rospentek")
-st.write("Escuadrón de Exploración de Caballería Blindado 11")
 
-# --- ENCABEZADO ---
-with st.expander("Datos del Responsable y Unidad", expanded=True):
-    col1, col2 = st.columns(2)
-    responsable = col1.text_input("Responsable (Grado y Apellido)")
-    seccion = col2.text_input("Sección")
-    tipo_v = st.selectbox("Categoría de Vehículo/Equipo", list(DATA_CHECKLIST.keys()))
-    comodidad = st.text_input("Grupo Comodidad")
+resultados = {}
 
-# --- CUERPO DEL CHECKLIST ---
-st.subheader(f"Aspectos a controlar: {tipo_v}")
-items = DATA_CHECKLIST[tipo_v]
-respuestas = []
+for cat, items in categorias.items():
+    st.header(cat)
+    for item in items:
+        c1, c2, c3, c4 = st.columns([4, 1, 1, 4])
+        c1.write(item)
+        si = c2.checkbox("SÍ", key=f"si_{item}")
+        no = c3.checkbox("NO", key=f"no_{item}")
+        obs = c4.text_input("Obs", key=f"obs_{item}")
+        resultados[item] = {"SI": "X" if si else "", "NO": "X" if no else "", "OBS": obs}
 
-for item in items:
-    col_t, col_s, col_n, col_o = st.columns([4, 1, 1, 3])
-    col_t.write(f"**{item}**")
-    si = col_s.checkbox("Sí", key=f"si_{item}")
-    no = col_n.checkbox("No", key=f"no_{item}")
-    obs = col_o.text_input("Obs", key=f"obs_{item}", placeholder="Observaciones...")
-    respuestas.append({"Aspecto": item, "Sí": "X" if si else "", "No": "X" if no else "", "Observaciones": obs})
+st.markdown("---")
+obs_final = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
 
-# --- OBSERVACIONES FINALES ---
-st.divider()
-obs_especialista = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
-
-# --- EL BOTÓN MÁGICO (Sin librerías que fallen) ---
-st.warning("Para guardar: Haz clic en el botón de abajo y selecciona 'Guardar como PDF' en tu navegador.")
-
-if st.button("🖨️ GENERAR REPORTE (PDF / IMPRIMIR)"):
-    # Este pequeño script de JavaScript ordena al navegador abrir el menú de impresión
-    st.components.v1.html("""
-        <script>
-            window.print();
-        </script>
-    """, height=0)
-
-# Espacio para firmas al final (como en el Word)
-st.write("        ")
-f1, f2, f3 = st.columns(3)
-f1.write("______________________\n\n J SEC")
-f2.write("______________________\n\n ESPECIALISTA")
-f3.write("______________________\n\n J SEC CDO Y SER")
+# --- FUNCIÓN DE IMPRESIÓN MEJORADA ---
+# Creamos un bloque de HTML que contiene SOLO la información relevante para imprimir
+if st.button("🖨️ GENERAR VISTA DE IMPRESIÓN"):
+    # Construimos una tabla HTML para que el navegador la entienda
+    html_report = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 20px; }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            th, td {{ border: 1px solid black; padding: 8px; text-align: left; }}
+            h2 {{ text-align: center; }}
+        </style>
+    </head>
+    <body>
+        <h2>LISTA DE CONTROL MANTENIMIENTO EJECUTIVO</h2>
+        <p><b>Responsable:</b> {responsable} | <b>Sección:</b> {seccion}</p>
+        <p><b>Fecha:</b> {fecha} | <b>Grupo Comodidad:</b> {comodidad}</p>
+        <table>
+            <tr><th>Aspecto a Controlar</th><th>SÍ</th><th>NO</th><th>Observaciones</th></tr>
+    """
+    for item, datos in resultados.items():
+        html_report += f"<tr><td>{item}</td><td>{datos['SI']}</td><td>{datos['NO']}</td><td>{datos['OBS']}</td></tr>"
+    
+    html_report += f"""
+        </table>
+        <p><b>Observaciones Specialist:</b> {obs_final}</p>
+        <br><br>
+        <div style="display: flex; justify-content: space-between;">
+            <p>____________________<br>J SEC</p>
+            <p>____________________<br>ESPECIALISTA</p>
+            <p>____________________<br>J SEC CDO Y SER</p>
+        </div>
+        <script>window.print();</script>
+    </body>
+    </html>
+    """
+    st.components.v1.html(html_report, height=600, scrolling=True)
