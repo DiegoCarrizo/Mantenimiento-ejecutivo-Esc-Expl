@@ -1,21 +1,13 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
 
-st.set_page_config(page_title="Mantenimiento Ejecutivo", layout="wide")
+# Configuración de página
+st.set_page_config(page_title="Mantenimiento Ejecutivo - Esc Expl", layout="wide")
 
-# --- DATOS DEL DOCUMENTO ---
-st.title("LISTA DE CONTROL DE MANTENIMIENTO EJECUTIVO")
-st.write("ESCUADRÓN DE EXPLORACIÓN DE CABALLERÍA BLINDADO 11")
-
-col1, col2 = st.columns(2)
-responsable = col1.text_input("RESPONSABLE", placeholder="Grado y Apellido")
-seccion = col2.text_input("SECCIÓN")
-fecha = col1.text_input("FECHA DE EJECUCIÓN", value=f"ROSPENTEK (SC), {datetime.now().strftime('%d')} de Febrero de 2026")
-comodidad = col2.text_input("GRUPO COMODIDAD")
-
-# --- LISTADO DE ÍTEMS (Extraído del Word) ---
-# Agrupamos por categorías para que sea más fácil de llenar
-categorias = {
+# --- BASE DE DATOS DE ASPECTOS A CONTROLAR ---
+# Extraído de la Lista de Control de Mantenimiento Ejecutivo [cite: 1, 6]
+DATA_CHECKLIST = {
     "VEE HUMMER / UNIMOG / MB": [
         "Engrase de rótulas delanteras", "Aceite de motor", "Filtro de aire", 
         "Control de refrigerante", "Líquidos de freno", "Control de caliper",
@@ -60,57 +52,79 @@ categorias = {
     ]
 }
 
+st.title("📋 Mantenimiento Ejecutivo - Rospentek")
+st.write("Escuadrón de Exploración de Caballería Blindado 11")
 
-resultados = {}
+# --- ENCABEZADO ---
+with st.expander("Datos del Responsable y Unidad", expanded=True):
+    col1, col2 = st.columns(2)
+    responsable = col1.text_input("Responsable (Grado y Apellido) [cite: 2]")
+    seccion = col2.text_input("Sección [cite: 3]")
+    tipo_v = st.selectbox("Categoría de Vehículo/Equipo", list(DATA_CHECKLIST.keys()))
+    comodidad = st.text_input("Grupo Comodidad [cite: 5]")
+    fecha_hoy = datetime.now().strftime('%d/%m/%Y')
 
-for cat, items in categorias.items():
-    st.header(cat)
-    for item in items:
-        c1, c2, c3, c4 = st.columns([4, 1, 1, 4])
-        c1.write(item)
-        si = c2.checkbox("SÍ", key=f"si_{item}")
-        no = c3.checkbox("NO", key=f"no_{item}")
-        obs = c4.text_input("Obs", key=f"obs_{item}")
-        resultados[item] = {"SI": "X" if si else "", "NO": "X" if no else "", "OBS": obs}
+# --- CUERPO DEL CHECKLIST ---
+st.subheader(f"Aspectos a controlar: {tipo_v}")
+items = DATA_CHECKLIST[tipo_v]
+respuestas = []
 
-st.markdown("---")
-obs_final = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
+for i, item in enumerate(items):
+    col_t, col_s, col_n, col_o = st.columns([4, 1, 1, 3])
+    col_t.write(f"**{item}**")
+    # Se añade i a la key para evitar duplicados si el texto del item se repite
+    si = col_s.checkbox("Sí", key=f"si_{tipo_v}_{i}")
+    no = col_n.checkbox("No", key=f"no_{tipo_v}_{i}")
+    obs = col_o.text_input("Obs", key=f"obs_{tipo_v}_{i}", placeholder="Observaciones...")
+    respuestas.append({"Aspecto": item, "Sí": "X" if si else "", "No": "X" if no else "", "Observaciones": obs})
 
-# --- FUNCIÓN DE IMPRESIÓN MEJORADA ---
-# Creamos un bloque de HTML que contiene SOLO la información relevante para imprimir
-if st.button("🖨️ GENERAR VISTA DE IMPRESIÓN"):
-    # Construimos una tabla HTML para que el navegador la entienda
+# --- OBSERVACIONES FINALES ---
+st.divider()
+obs_especialista = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
+
+# --- BOTÓN DE IMPRESIÓN / REPORTE VISUAL ---
+if st.button("🖨️ Generar Reporte para Imprimir / PDF"):
+    # Construcción del reporte en HTML para la función de impresión del navegador
     html_report = f"""
-    <html>
-    <head>
-        <style>
-            body {{ font-family: Arial, sans-serif; padding: 20px; }}
-            table {{ width: 100%; border-collapse: collapse; }}
-            th, td {{ border: 1px solid black; padding: 8px; text-align: left; }}
-            h2 {{ text-align: center; }}
-        </style>
-    </head>
-    <body>
-        <h2>LISTA DE CONTROL MANTENIMIENTO EJECUTIVO</h2>
-        <p><b>Responsable:</b> {responsable} | <b>Sección:</b> {seccion}</p>
-        <p><b>Fecha:</b> {fecha} | <b>Grupo Comodidad:</b> {comodidad}</p>
-        <table>
-            <tr><th>Aspecto a Controlar</th><th>SÍ</th><th>NO</th><th>Observaciones</th></tr>
+    <div style="font-family: 'Arial'; padding: 30px; border: 1px solid #000;">
+        <h2 style="text-align: center;">LISTA DE CONTROL DE MANTENIMIENTO EJECUTIVO</h2>
+        <p><b>UNIDAD:</b> Escuadrón de Exploración de Caballería Blindado 11</p>
+        <p><b>RESPONSABLE:</b> {responsable} &nbsp;&nbsp;&nbsp; <b>SECCIÓN:</b> {seccion}</p>
+        <p><b>FECHA:</b> {fecha_hoy} &nbsp;&nbsp;&nbsp; <b>GRUPO COMODIDAD:</b> {comodidad}</p>
+        <hr>
+        <h3>Vehículo/Equipo: {tipo_v}</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid black; padding: 8px;">Aspecto a Controlar</th>
+                    <th style="border: 1px solid black; padding: 8px; width: 40px;">SÍ</th>
+                    <th style="border: 1px solid black; padding: 8px; width: 40px;">NO</th>
+                    <th style="border: 1px solid black; padding: 8px;">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
     """
-    for item, datos in resultados.items():
-        html_report += f"<tr><td>{item}</td><td>{datos['SI']}</td><td>{datos['NO']}</td><td>{datos['OBS']}</td></tr>"
+    for r in respuestas:
+        html_report += f"""
+                <tr>
+                    <td style="border: 1px solid black; padding: 8px;">{r['Aspecto']}</td>
+                    <td style="border: 1px solid black; text-align: center;">{r['Sí']}</td>
+                    <td style="border: 1px solid black; text-align: center;">{r['No']}</td>
+                    <td style="border: 1px solid black; padding: 8px;">{r['Observaciones']}</td>
+                </tr>
+        """
     
     html_report += f"""
+            </tbody>
         </table>
-        <p><b>Observaciones Specialist:</b> {obs_final}</p>
+        <p><b>OBSERVACIONES DEL ESPECIALISTA:</b> {obs_especialista}</p>
         <br><br>
-        <div style="display: flex; justify-content: space-between;">
-            <p>____________________<br>J SEC</p>
-            <p>____________________<br>ESPECIALISTA</p>
-            <p>____________________<br>J SEC CDO Y SER</p>
+        <div style="display: flex; justify-content: space-around; text-align: center;">
+            <div>____________________<br>J SEC [cite: 9]</div>
+            <div>____________________<br>Especialista [cite: 11]</div>
+            <div>____________________<br>J Sec Cdo y Ser [cite: 15]</div>
         </div>
-        <script>window.print();</script>
-    </body>
-    </html>
+    </div>
+    <script>window.print();</script>
     """
-    st.components.v1.html(html_report, height=600, scrolling=True)
+    st.components.v1.html(html_report, height=800, scrolling=True)
