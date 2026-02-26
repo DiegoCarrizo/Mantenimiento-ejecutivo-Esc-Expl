@@ -79,20 +79,23 @@ for item in items:
 st.divider()
 obs_especialista = st.text_area("OBSERVACIONES DEL ESPECIALISTA / SOLICITUDES AL ESCALÓN SUPERIOR")
 
-# --- GENERAR EXCEL ---
+# --- BOTÓN DE GENERACIÓN DE EXCEL ---
 if st.button("Preparar Planilla Excel"):
-    # Creamos el DataFrame con las respuestas del checklist 
-    df = pd.DataFrame(respuestas)
-    
-    # Preparamos el archivo en memoria
-    output = BytesIO()
-    # Usamos openpyxl que es más liviano para el servidor
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Mantenimiento')
-    
-    st.download_button(
-        label="📥 Descargar Excel para Archivo",
-        data=output.getvalue(),
-        file_name=f"Mantenimiento_{tipo_v}_{seccion}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    if not responsable or not seccion:
+        st.error("Por favor, completa el nombre del Responsable y la Sección.")
+    else:
+        # Crear DataFrame con los datos del checklist
+        df_export = pd.DataFrame(respuestas)
+        
+        # Generar el archivo Excel en memoria
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_export.to_excel(writer, index=False, sheet_name='Mantenimiento')
+        
+        # Botón de descarga real
+        st.download_button(
+            label="📥 Descargar Excel para Archivo",
+            data=output.getvalue(),
+            file_name=f"Mantenimiento_{tipo_v}_{seccion}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
